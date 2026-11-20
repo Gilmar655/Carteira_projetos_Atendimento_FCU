@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Carteira de Projetos — Atendimento FCU | Enel Brasil</title>
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <img id="logo" class="brand-logo" src="assets/img/logo-enel.png" alt="Enel Brasil">
+    <span id="logoTexto" class="brand-text" hidden>Enel Brasil</span>
+    <span class="brand-sep" aria-hidden="true"></span>
+    <div>
+      <h1>Carteira de Projetos — Atendimento FCU</h1>
+      <p class="brand-sub" id="subRef">Carregando base…</p>
+    </div>
+  </div>
+  <div class="clock" aria-live="off">
+    <div class="clock-time" id="relogio">--:--:--</div>
+    <div class="clock-date" id="dataHoje">—</div>
+    <div class="clock-tz">Horário de Brasília</div>
+  </div>
+</header>
+<div class="gradient-bar" aria-hidden="true"></div>
+
+<main class="wrap">
+  <div id="loading" class="loading"><div class="spinner"></div><p>Carregando a carteira de projetos…</p></div>
+  <div id="erro" class="erro" hidden></div>
+
+  <div id="app" hidden>
+    <section class="kpis">
+      <article class="kpi">
+        <span class="kpi-label">Projetos na base</span>
+        <strong class="kpi-value" id="kTotal">—</strong>
+        <span class="kpi-foot" id="kTotalFoot">—</span>
+      </article>
+      <article class="kpi">
+        <span class="kpi-label">Notas em carteira</span>
+        <strong class="kpi-value" id="kCarteira">—</strong>
+        <span class="kpi-foot">sem dataDELI</span>
+      </article>
+      <article class="kpi kpi-bad">
+        <span class="kpi-label">Notas vencidas hoje</span>
+        <strong class="kpi-value" id="kVencidas">—</strong>
+        <span class="kpi-foot">prazo final anterior a hoje</span>
+      </article>
+      <article class="kpi kpi-ok">
+        <span class="kpi-label">Projetos com programação futura</span>
+        <strong class="kpi-value" id="kProgFut">—</strong>
+        <span class="kpi-foot">Data_Max_Prog de hoje em diante</span>
+      </article>
+
+      <article class="kpi kpi-mbo" id="cardMbo">
+        <div class="mbo-head">
+          <div>
+            <span class="kpi-label">MBO — projetos a vencer</span>
+            <span class="mbo-sub">em relação a hoje (<span id="mboHoje">—</span>)</span>
+          </div>
+          <label class="mbo-janela">próximos
+            <select id="mboJanela">
+              <option value="7">7 dias</option>
+              <option value="15">15 dias</option>
+              <option value="30" selected>30 dias</option>
+              <option value="60">60 dias</option>
+              <option value="90">90 dias</option>
+            </select>
+          </label>
+        </div>
+        <div class="mbo-nums">
+          <div><strong class="kpi-value" id="mboProj">—</strong><span>projetos</span></div>
+          <div><strong class="kpi-value" id="mboNotas">—</strong><span>notas</span></div>
+          <div class="mbo-venc"><strong class="kpi-value" id="mboVenc">—</strong><span>MBO já vencidos</span></div>
+        </div>
+        <ol class="mbo-lista" id="mboLista"></ol>
+        <button class="btn btn-light" id="mboFiltrar" type="button">Ver todos na lista</button>
+      </article>
+    </section>
+
+    <section class="card filtros">
+      <div class="filtros-top">
+        <div class="busca">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4a6 6 0 104.47 10l4.27 4.27 1.41-1.41-4.27-4.27A6 6 0 0010 4zm0 2a4 4 0 110 8 4 4 0 010-8z"/></svg>
+          <input id="busca" type="search" placeholder="Pesquisar projeto, nota, cliente, circuito ou local de instalação…" aria-label="Pesquisar">
+        </div>
+        <button class="btn btn-ghost" id="limpar" type="button">Limpar filtros</button>
+      </div>
+      <div class="dropdowns" id="filtros"></div>
+      <div class="chips" id="chips"></div>
+    </section>
+
+    <section class="charts">
+      <article class="card">
+        <h2>Situação do prazo hoje</h2>
+        <p class="muted">Projetos filtrados, pelo Prazo_Final_DELI comparado com hoje. Clique numa barra para filtrar.</p>
+        <div class="bars" id="chartSituacao"></div>
+      </article>
+      <article class="card">
+        <h2>Projetos em carteira por polo</h2>
+        <p class="muted">Projetos sem dataDELI: vencidos × no prazo (hoje). Clique para filtrar o polo.</p>
+        <div class="bars" id="chartPolo"></div>
+      </article>
+    </section>
+
+    <section class="card">
+      <div class="lista-head">
+        <div class="tabs" role="tablist">
+          <button class="tab active" role="tab" data-tab="projetos" aria-selected="true">Projetos</button>
+          <button class="tab" role="tab" data-tab="notas" aria-selected="false">Notas</button>
+        </div>
+        <span class="muted" id="contagem">—</span>
+      </div>
+      <div class="tabela-wrap">
+        <table class="tabela" id="tabela"><thead></thead><tbody></tbody></table>
+      </div>
+      <div class="paginacao" id="paginacao"></div>
+    </section>
+  </div>
+</main>
+
+<footer class="rodape" id="rodape">—</footer>
+
+<div class="drawer" id="drawer" hidden>
+  <div class="drawer-fundo" data-fechar></div>
+  <aside class="drawer-painel" role="dialog" aria-modal="true" aria-labelledby="drawerTitulo">
+    <div class="drawer-barra">
+      <button class="btn btn-ghost" id="voltar" type="button" hidden>← Voltar</button>
+      <button class="btn btn-ghost fechar" type="button" data-fechar aria-label="Fechar">✕</button>
+    </div>
+    <div id="drawerCorpo"></div>
+  </aside>
+</div>
+
+<script src="assets/js/app.js"></script>
+</body>
+</html>
