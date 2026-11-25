@@ -1,137 +1,164 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Carteira de Projetos — Atendimento FCU | Enel Brasil</title>
-<link rel="stylesheet" href="assets/css/style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Atendimento ao Cliente · FCU MBO | Enel Brasil</title>
+<meta name="description" content="Carteira de notas e projetos de Atendimento ao Cliente (FCU) — acompanhamento MBO e NOT MBO, prazos, aging, status e localização — Enel Brasil Grids">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" href="assets/enel-brasil-logo.png">
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+<link rel="stylesheet" href="vendor/leaflet/MarkerCluster.css">
+<link rel="stylesheet" href="vendor/leaflet/MarkerCluster.Default.css">
+<link rel="stylesheet" href="styles.css?v=20261125a">
+<script src="vendor/chart.umd.min.js" defer></script>
+<script src="vendor/leaflet/leaflet.js" defer></script>
+<script src="vendor/leaflet/leaflet.markercluster.js" defer></script>
+<script src="vendor/xlsx.full.min.js" defer></script>
+<script src="data/base.js?v=20261125a" defer></script>
+<script src="data/historico.js?v=20261125a" defer></script>
+<script src="app.js?v=20261125a" defer></script>
 </head>
 <body>
-<header class="topbar">
-  <div class="brand">
-    <img id="logo" class="brand-logo" src="assets/img/logo-enel.png" alt="Enel Brasil">
-    <span id="logoTexto" class="brand-text" hidden>Enel Brasil</span>
-    <span class="brand-sep" aria-hidden="true"></span>
-    <div>
-      <h1>Carteira de Projetos — Atendimento FCU</h1>
-      <p class="brand-sub" id="subRef">Carregando base…</p>
+<div class="spectrum"></div>
+<header class="top">
+  <div class="top-in">
+    <a class="brand" href="#painel"><img src="assets/enel-brasil-logo.png" alt="Enel Brasil"></a>
+    <div class="title">
+      <span class="eyebrow">Enel Brasil · Grids · Gestão de Programação</span>
+      <h1>Atendimento ao Cliente — Execução</h1>
+      <span class="sub" id="subRef">Carteira FCU · acompanhamento MBO e NOT MBO</span>
+    </div>
+    <div class="clock" aria-live="off">
+      <div class="clock-time" id="clockTime">--:--:--</div>
+      <div class="clock-date" id="clockDate">—</div>
     </div>
   </div>
-  <div class="clock" aria-live="off">
-    <div class="clock-time" id="relogio">--:--:--</div>
-    <div class="clock-date" id="dataHoje">—</div>
-    <div class="clock-tz">Horário de Brasília</div>
-  </div>
+  <nav class="tabs" id="tabs">
+    <a href="#painel" class="active">Painel</a>
+    <a href="#mbo">MBO × NOT MBO</a>
+    <a href="#aging">Aging e prazos</a>
+    <a href="#status">Status e demanda</a>
+    <a href="#mapa">Mapa</a>
+    <a href="#base">Base</a>
+    <span class="grow"></span>
+    <div class="seg big" id="mboSeg" title="Filtro rápido KPI MBO">
+      <button data-v="" class="on">Todos</button><button data-v="MBO">MBO</button><button data-v="NOT MBO">NOT MBO</button>
+    </div>
+    <button class="btn ghost" id="btnFilters">☰ Filtros <b id="fCount"></b></button>
+    <button class="btn ghost" id="btnImport">⬆ Importar Excel</button>
+    <button class="btn primary" id="btnExport">⬇ Exportar</button>
+  </nav>
 </header>
-<div class="gradient-bar" aria-hidden="true"></div>
 
-<main class="wrap">
-  <div id="loading" class="loading"><div class="spinner"></div><p>Carregando a carteira de projetos…</p></div>
-  <div id="erro" class="erro" hidden></div>
+<div class="layout">
+<main id="main">
+  <div class="chips" id="chips"></div>
 
-  <div id="app" hidden>
-    <section class="kpis">
-      <article class="kpi">
-        <span class="kpi-label">Projetos na base</span>
-        <strong class="kpi-value" id="kTotal">—</strong>
-        <span class="kpi-foot" id="kTotalFoot">—</span>
-      </article>
-      <article class="kpi">
-        <span class="kpi-label">Notas em carteira</span>
-        <strong class="kpi-value" id="kCarteira">—</strong>
-        <span class="kpi-foot">sem dataDELI</span>
-      </article>
-      <article class="kpi kpi-bad">
-        <span class="kpi-label">Notas vencidas hoje</span>
-        <strong class="kpi-value" id="kVencidas">—</strong>
-        <span class="kpi-foot">prazo final anterior a hoje</span>
-      </article>
-      <article class="kpi kpi-ok">
-        <span class="kpi-label">Projetos com programação futura</span>
-        <strong class="kpi-value" id="kProgFut">—</strong>
-        <span class="kpi-foot">Data_Max_Prog de hoje em diante</span>
-      </article>
-
-      <article class="kpi kpi-mbo" id="cardMbo">
-        <div class="mbo-head">
-          <div>
-            <span class="kpi-label">MBO — projetos a vencer</span>
-            <span class="mbo-sub">em relação a hoje (<span id="mboHoje">—</span>)</span>
-          </div>
-          <label class="mbo-janela">próximos
-            <select id="mboJanela">
-              <option value="7">7 dias</option>
-              <option value="15">15 dias</option>
-              <option value="30" selected>30 dias</option>
-              <option value="60">60 dias</option>
-              <option value="90">90 dias</option>
-            </select>
-          </label>
-        </div>
-        <div class="mbo-nums">
-          <div><strong class="kpi-value" id="mboProj">—</strong><span>projetos</span></div>
-          <div><strong class="kpi-value" id="mboNotas">—</strong><span>notas</span></div>
-          <div class="mbo-venc"><strong class="kpi-value" id="mboVenc">—</strong><span>MBO já vencidos</span></div>
-        </div>
-        <ol class="mbo-lista" id="mboLista"></ol>
-        <button class="btn btn-light" id="mboFiltrar" type="button">Ver todos na lista</button>
-      </article>
-    </section>
-
-    <section class="card filtros">
-      <div class="filtros-top">
-        <div class="busca">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4a6 6 0 104.47 10l4.27 4.27 1.41-1.41-4.27-4.27A6 6 0 0010 4zm0 2a4 4 0 110 8 4 4 0 010-8z"/></svg>
-          <input id="busca" type="search" placeholder="Pesquisar projeto, nota, cliente, circuito ou local de instalação…" aria-label="Pesquisar">
-        </div>
-        <button class="btn btn-ghost" id="limpar" type="button">Limpar filtros</button>
+  <section id="painel" class="block">
+    <div class="hero">
+      <div class="kcol" id="kpis"></div>
+      <div class="card chart wide">
+        <div class="ch-head"><h3>Entrada × conclusão mensal de notas</h3><span class="muted">Entrada = data da nota · Conclusão = dataDELI · clique para filtrar o mês de entrada</span></div>
+        <div class="cv tall"><canvas id="chMes"></canvas></div>
       </div>
-      <div class="dropdowns" id="filtros"></div>
-      <div class="chips" id="chips"></div>
-    </section>
+    </div>
+  </section>
 
-    <section class="charts">
-      <article class="card">
-        <h2>Situação do prazo hoje</h2>
-        <p class="muted">Projetos filtrados, pelo Prazo_Final_DELI comparado com hoje. Clique numa barra para filtrar.</p>
-        <div class="bars" id="chartSituacao"></div>
-      </article>
-      <article class="card">
-        <h2>Projetos em carteira por polo</h2>
-        <p class="muted">Projetos sem dataDELI: vencidos × no prazo (hoje). Clique para filtrar o polo.</p>
-        <div class="bars" id="chartPolo"></div>
-      </article>
-    </section>
-
-    <section class="card">
-      <div class="lista-head">
-        <div class="tabs" role="tablist">
-          <button class="tab active" role="tab" data-tab="projetos" aria-selected="true">Projetos</button>
-          <button class="tab" role="tab" data-tab="notas" aria-selected="false">Notas</button>
+  <section id="mbo" class="block">
+    <div class="sec-head"><h2>MBO × NOT MBO</h2><p>Comparação com os demais filtros aplicados. Clique no cartão para filtrar.</p></div>
+    <div class="mbo-grid">
+      <div id="mboCards" class="mbo-cards"></div>
+      <div class="card venc">
+        <div class="ch-head"><h3>MBO a vencer</h3>
+          <label class="muted">próximos <select id="vencJan"><option>7</option><option>15</option><option selected>30</option><option>60</option><option>90</option></select> dias</label>
         </div>
-        <span class="muted" id="contagem">—</span>
+        <div class="venc-nums" id="vencNums"></div>
+        <ol class="venc-list" id="vencList"></ol>
+        <button class="btn sm" id="vencFiltrar">Ver na base</button>
       </div>
-      <div class="tabela-wrap">
-        <table class="tabela" id="tabela"><thead></thead><tbody></tbody></table>
+    </div>
+    <div class="grid2">
+      <div class="card chart"><h3>Notas por polo — MBO × NOT MBO</h3><div class="cv"><canvas id="chPolo"></canvas></div></div>
+      <div class="card chart"><h3>Carteira por executante — no prazo × vencidas</h3><div class="cv"><canvas id="chEmp"></canvas></div></div>
+    </div>
+  </section>
+
+  <section id="aging" class="block">
+    <div class="sec-head"><h2>Aging e prazos</h2><p>Notas classificadas pelos dias a vencer (coluna AUX_AGING_VENC_Tabela). Clique em uma barra para filtrar.</p></div>
+    <div class="grid2">
+      <div class="card chart"><h3>Aging — tempo para vencimento</h3><div class="cv"><canvas id="chAging"></canvas></div></div>
+      <div class="card chart"><h3>Prazo de vencimento por mês (notas em carteira)</h3><div class="cv"><canvas id="chPrazo"></canvas></div></div>
+    </div>
+  </section>
+
+  <section id="status" class="block">
+    <div class="sec-head"><h2>Status e demanda</h2><p>Clique em uma fatia ou barra para filtrar.</p></div>
+    <div class="grid3">
+      <div class="card chart"><h3>Status de execução da nota</h3><div class="cv"><canvas id="chStatus"></canvas></div></div>
+      <div class="card chart"><h3>Demanda RCO (camada)</h3><div class="cv"><canvas id="chRco"></canvas></div></div>
+      <div class="card chart"><h3>NEC | UPS</h3><div class="cv"><canvas id="chNec"></canvas></div></div>
+      <div class="card chart"><h3>KPI Nota</h3><div class="cv"><canvas id="chKpi"></canvas></div></div>
+      <div class="card chart"><h3>Tipo de projeto — top 10</h3><div class="cv"><canvas id="chTipo"></canvas></div></div>
+      <div class="card chart"><h3>Tipo de cliente</h3><div class="cv"><canvas id="chCli"></canvas></div></div>
+    </div>
+  </section>
+
+  <section id="mapa" class="block">
+    <div class="sec-head"><h2>Localização dos projetos</h2><p id="mapInfo">Coordenadas (Latitude/Longitude) informadas na FCU.</p></div>
+    <div class="card map-card">
+      <div class="map-tools">
+        <div class="seg" id="mapColor"><button data-v="mbo" class="on">Cor por KPI MBO</button><button data-v="prazo">Situação do prazo</button><button data-v="exec">Status execução</button></div>
+        <div class="legend" id="mapLegend"></div>
+        <span class="grow"></span>
+        <button class="btn sm" id="mapFit">Ajustar ao filtro</button>
       </div>
-      <div class="paginacao" id="paginacao"></div>
-    </section>
-  </div>
+      <div id="map"></div>
+    </div>
+  </section>
+
+  <section id="base" class="block">
+    <div class="sec-head"><h2>Lista de notas e projetos</h2><p>Clique na nota ou no projeto para ver o detalhe, as datas e a localização.</p></div>
+    <div class="card">
+      <div class="tbl-tools">
+        <div class="seg" id="tblMode"><button data-v="notas" class="on">Notas</button><button data-v="proj">Projetos</button></div>
+        <input id="tQ" type="search" placeholder="Buscar projeto, nota, cliente, circuito, bairro…">
+        <span class="grow"></span>
+        <span class="muted" id="tCount"></span>
+        <select id="tSize" aria-label="Linhas por página"><option>25</option><option selected>50</option><option>100</option><option>250</option></select>
+        <button class="btn sm" id="btnExportTbl">⬇ Exportar esta lista</button>
+      </div>
+      <div class="tbl-wrap"><table class="tbl" id="tbl"><thead></thead><tbody></tbody></table></div>
+      <div class="pager" id="pager"></div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <div><img src="assets/enel-brasil-logo.png" alt="Enel Brasil"></div>
+    <div id="footMeta" class="muted"></div>
+    <div class="muted">Gestão de Programação · Enel Brasil – Grids</div>
+  </footer>
 </main>
 
-<footer class="rodape" id="rodape">—</footer>
-
-<div class="drawer" id="drawer" hidden>
-  <div class="drawer-fundo" data-fechar></div>
-  <aside class="drawer-painel" role="dialog" aria-modal="true" aria-labelledby="drawerTitulo">
-    <div class="drawer-barra">
-      <button class="btn btn-ghost" id="voltar" type="button" hidden>← Voltar</button>
-      <button class="btn btn-ghost fechar" type="button" data-fechar aria-label="Fechar">✕</button>
-    </div>
-    <div id="drawerCorpo"></div>
-  </aside>
+<aside class="side" id="side">
+  <div class="side-head">
+    <b>Filtros</b>
+    <button class="btn sm" id="btnClear">Resetar filtros</button>
+    <button class="x" id="sideX" aria-label="Fechar filtros">✕</button>
+  </div>
+  <div class="side-body" id="sideBody"></div>
+</aside>
 </div>
+<div class="scrim" id="scrim" hidden></div>
 
-<script src="assets/js/app.js"></script>
+<div class="modal" id="modal" hidden>
+  <div class="modal-box" role="dialog" aria-modal="true">
+    <button class="x" id="modalX" aria-label="Fechar">✕</button>
+    <div id="modalBody"></div>
+  </div>
+</div>
+<input type="file" id="fileIn" accept=".xlsx,.xlsm,.xls,.csv" hidden>
+<div class="toast" id="toast" hidden></div>
+<div class="loading" id="loading"><div class="spin"></div><span>Carregando base…</span></div>
 </body>
 </html>
