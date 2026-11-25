@@ -8,7 +8,7 @@ Site estático (GitHub Pages) para acompanhar as notas e projetos de **Atendimen
 ## O que o site mostra
 - Cabeçalho com logomarca Enel Brasil, relógio e data on-line (horário de Brasília) e botão rápido **Todos / MBO / NOT MBO**.
 - **Filtros laterais** no modelo do painel Spotfire (anexo PowerPoint), com contagem de notas por valor e busca nas listas longas:
-  - *Dados da Nota*: Projeto, Nota, KPI Nota, KPI MBO, Prazo final (DELI), Data DELI (com "incluir vazios"), Responsável nota, Nível projeto, Nível de tensão, Status nota, Situação da nota, Situação do prazo, Aging, Tipo de prazo, Demanda RCO (camada), NEC | UPS, KPI Projeto, Mês de entrada e **Mudança desde a foto anterior**.
+  - *Dados da Nota*: Projeto, Nota, KPI Nota, KPI MBO, Prazo final (DELI), Data DELI (com "incluir vazios"), Projetos na nota (1, 2, 3–5, 6–10, mais de 10), Responsável nota, Nível projeto, Nível de tensão, Status nota, Situação da nota, Situação do prazo, Aging, Tipo de prazo, Demanda RCO (camada), NEC | UPS, KPI Projeto, Mês de entrada e **Mudança desde a foto anterior**.
   - *Executante*: Polo, KPI Execução, Executante, Contrato, Área.
   - *Projeto*: Tipo de projeto, Tipo objeto da nota, Status do projeto.
   - *Cliente*: Tipo de cliente, Cliente.
@@ -18,7 +18,7 @@ Site estático (GitHub Pages) para acompanhar as notas e projetos de **Atendimen
 - **Aging e prazos**: aging (Vencida, ≤10, 11–15, 16–30, 31–60, 61–90, 91–120, >120 dias) e prazo de vencimento por mês (MBO × NOT MBO).
 - **Status e demanda**: status de execução, demanda RCO, NEC | UPS, KPI Nota, tipo de projeto e tipo de cliente. Gráficos clicáveis.
 - **Mapa** (Google Maps ruas/híbrido/satélite + OpenStreetMap) com as coordenadas Latitude/Longitude da FCU, agrupamento, cor por KPI MBO, situação do prazo ou status de execução e links **Google Maps, Waze e Street View**.
-- **Base**: lista de **Notas** (agregada) e de **Projetos**, com busca, ordenação, paginação e exportação Excel.
+- **Base**: lista de **Notas** (agregada) e de **Projetos** — cada projeto mostra a **quantidade de projetos da sua nota** (clique para abrir a nota), com busca, ordenação, paginação e exportação Excel.
 - **Histórico por projeto e por nota** (clique no código): contador de prazo ao vivo, linha do tempo de todas as datas, mini-mapa, comparação campo a campo entre **todas as fotos da FCU** (19/10, 16/11, 25/11…) com as mudanças destacadas, projetos que entraram/saíram da nota, evolução das programações e exportação do histórico em Excel. Link direto: `#projeto=CODIGO` ou `#nota=NUMERO`.
 
 ## Regras dos indicadores

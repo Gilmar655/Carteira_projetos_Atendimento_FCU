@@ -82,7 +82,9 @@ function load(base, hist) {
   for (const f of S.fotos) { f.byP = new Map(); f.byN = new Map(); for (const r of f.rows) { f.byP.set(r.Projeto, r); const k = String(r.nota); (f.byN.get(k) || f.byN.set(k, []).get(k)).push(r); } }
   const cur = S.fotos[S.fotos.length - 1], prev = S.fotos[S.fotos.length - 2];
   S.byP = cur.byP; S.byN = cur.byN; S.prev = prev;
+  const faixa = n => n === 1 ? '1 projeto' : n === 2 ? '2 projetos' : n <= 5 ? '3 a 5 projetos' : n <= 10 ? '6 a 10 projetos' : 'Mais de 10 projetos';
   for (const r of S.rows) {
+    r._np = S.byN.get(String(r.nota)).length; r._npf = faixa(r._np);
     r._coord = r.Latitude != null && r.Longitude != null && Math.abs(r.Latitude) > 1 ? 'Com coordenada' : 'Sem coordenada';
     r._mes = r.data_nota ? r.data_nota.slice(0, 7) : null;
     r._prazo = r.AUX_TRATAR_NOTA === 'CONCLUÍDO' ? 'Concluída' : r.STATUS_PRAZO === 'FORA DO PRAZO' ? 'Vencida' : r.STATUS_PRAZO === 'NO PRAZO' ? 'No prazo' : 'Sem prazo';
@@ -112,6 +114,7 @@ function buildFilters() {
     {g: 'Dados da Nota', k: 'KPI MBO', l: 'KPI MBO'},
     {g: 'Dados da Nota', k: 'Prazo_Final_DELI', l: 'Prazo final (DELI)', t: 'date'},
     {g: 'Dados da Nota', k: 'dataDELI', l: 'Data DELI', t: 'date'},
+    {g: 'Dados da Nota', k: '_npf', l: 'Projetos na nota', ord: ['1 projeto', '2 projetos', '3 a 5 projetos', '6 a 10 projetos', 'Mais de 10 projetos']},
     {g: 'Dados da Nota', k: 'AUX_RESP_NOTA', l: 'Responsável nota'},
     {g: 'Dados da Nota', k: 'Nível_Projeto', l: 'Nível projeto'},
     {g: 'Dados da Nota', k: 'Nível_Tensão', l: 'Nível de tensão'},
@@ -415,7 +418,7 @@ const mapCol = r => S.mapColor === 'mbo' ? C_MBO[r['KPI MBO']] || '#999' : S.map
 function popup(r) {
   const d = r['Qtd Dias p/ Venc'];
   return `<div class="pp"><h5><button class="lnk" data-p="${esc(r.Projeto)}">${esc(r.Projeto)}</button></h5>
-    <div class="r">Nota <button class="lnk" data-n="${esc(r.nota)}">${esc(r.nota)}</button> · <b style="color:${C_MBO[r['KPI MBO']]}">${esc(r['KPI MBO'])}</b> · ${esc(r['KPI Nota'] || '')}</div>
+    <div class="r">Nota <button class="lnk" data-n="${esc(r.nota)}">${esc(r.nota)}</button> (${r._np} projeto${r._np > 1 ? 's' : ''} na nota) · <b style="color:${C_MBO[r['KPI MBO']]}">${esc(r['KPI MBO'])}</b> · ${esc(r['KPI Nota'] || '')}</div>
     <div class="r">${esc(r.CLIENTE || 'cliente não informado')}</div>
     <div class="r">${esc(r.Tipo_Projeto || '')} · ${esc(r.Empreiteira_Contratos || '—')}</div>
     <div class="r">Execução: <b>${esc(r.Status_Execução_Nota || '—')}</b> · Polo ${esc(r.Polo || '—')}</div>
@@ -446,11 +449,12 @@ const COLS = {
     ['Prazo_Final_DELI', 'Prazo final', r => fd(r.Prazo_Final_DELI)],
     ['dv', 'Dias p/ venc.', r => ddCell(r), 'n'], ['AUX_AGING_VENC_Tabela', 'Aging'], ['dataDELI', 'DELI', r => fd(r.dataDELI)],
     ['Polo', 'Polo'], ['emps', 'Executante(s)'], ['CLIENTE', 'Cliente', null, 'w'], ['Tipo de Cliente', 'Tipo cliente'], ['Tipo_Obj_Nota', 'Tipo objeto'],
-    ['np', 'Projetos', r => nf.format(r.np), 'n'], ['ups', 'UPS plan.', r => nf2.format(r.ups), 'n'], ['progs', 'Programações', r => nf.format(r.progs), 'n'],
+    ['np', 'Projetos na nota', r => r.np === r._np ? nf.format(r.np) : `${nf.format(r.np)} <span class="muted">de ${nf.format(r._np)}</span>`, 'n'], ['ups', 'UPS plan.', r => nf2.format(r.ups), 'n'], ['progs', 'Programações', r => nf.format(r.progs), 'n'],
     ['Data_Max_Prog_nota', 'Últ. prog. nota', r => fd(r.Data_Max_Prog_nota)], ['camada', 'Demanda RCO'], ['municipio', 'Município'], ['bairro', 'Bairro'], ['_mud', 'Mudança']],
   proj: [
     ['Projeto', 'Projeto', r => `<button class="lnk" data-p="${esc(r.Projeto)}">${esc(r.Projeto)}</button>`],
     ['nota', 'Nota', r => `<button class="lnk" data-n="${esc(r.nota)}">${esc(r.nota)}</button>`],
+    ['_np', 'Projetos na nota', r => `<button class="lnk" data-n="${esc(r.nota)}" title="Abrir a nota e ver todos os projetos">${nf.format(r._np)}</button>`, 'n'],
     ['KPI MBO', 'KPI MBO', r => `<span class="badge" style="--c:${C_MBO[r['KPI MBO']]}">${esc(r['KPI MBO'])}</span>`],
     ['Tipo_Projeto', 'Tipo projeto'], ['Status_Projeto', 'Status projeto'], ['KPI Projeto', 'KPI projeto'], ['Status_Execução_Nota', 'Execução'],
     ['Empreiteira_Contratos', 'Executante'], ['contrato', 'Contrato'], ['Polo', 'Polo'], ['Area Real', 'Área', null, 'n'], ['Circuito', 'Circuito'],
@@ -558,14 +562,14 @@ function openProjeto(id, fromNav) {
   openModal(`<div class="mh">${navBar()}<h2>${esc(r.Projeto)}</h2>
     <span class="badge" style="--c:${C_MBO[r['KPI MBO']]}">${esc(r['KPI MBO'])}</span><span class="badge" style="--c:${C_PRAZO[r._prazo]}">${esc(r._prazo)}</span>
     <span class="badge" style="--c:${C_EXEC[r.Status_Execução_Nota] || '#999'}">${esc(r.Status_Execução_Nota || '—')}</span><span class="badge" style="--c:#fab219">${esc(r._mud)}</span></div>
-    <p class="muted" style="margin:6px 0 0">Nota <button class="lnk" data-n="${esc(r.nota)}">${esc(r.nota)}</button> · ${esc(r.CLIENTE || 'cliente não informado')} · ${esc(r['Tipo de Cliente'] || '')}</p>
+    <p class="muted" style="margin:6px 0 0">Nota <button class="lnk" data-n="${esc(r.nota)}">${esc(r.nota)}</button> · <b>${nf.format(r._np)} projeto${r._np > 1 ? 's' : ''} na nota</b> · ${esc(r.CLIENTE || 'cliente não informado')} · ${esc(r['Tipo de Cliente'] || '')}</p>
     ${countdown(r)}
-    ${info([['Tipo de projeto', esc(r.Tipo_Projeto || '—')], ['Tipo objeto da nota', esc(r.Tipo_Obj_Nota || '—')], ['Status do projeto', esc(r.Status_Projeto || '—')], ['KPI projeto / nota', `${esc(r['KPI Projeto'] || '—')} / ${esc(r['KPI Nota'] || '—')}`],
+    ${info([['Projetos na nota', `${nf.format(r._np)} (${esc(r.nota)})`], ['Tipo de projeto', esc(r.Tipo_Projeto || '—')], ['Tipo objeto da nota', esc(r.Tipo_Obj_Nota || '—')], ['Status do projeto', esc(r.Status_Projeto || '—')], ['KPI projeto / nota', `${esc(r['KPI Projeto'] || '—')} / ${esc(r['KPI Nota'] || '—')}`],
       ['Executante', esc(r.Empreiteira_Contratos || '—')], ['Contrato', esc(r.contrato || '—')], ['Polo / Área', `${esc(r.Polo || '—')} / ${esc(r['Area Real'] ?? '—')}`], ['Circuito', esc(r.Circuito || '—')],
       ['UPS plan. / exec.', `${num(r.Ups_Plan)} / ${num(r.Ups_Exec_Projeto)}`], ['Programações', `${num(r.Qtde_Programacoes)} · última ${fd(r.Data_Max_Prog)}`], ['Nível projeto / tensão', `${esc(r.Nível_Projeto || '—')} / ${esc(r.Nível_Tensão || '—')}`], ['NEC | UPS · camada', `${esc(r.NEC_UPS || '—')} · ${esc(r.camada || '—')}`],
       ['Bairro / município', `${esc(r.bairro || '—')} / ${esc(r.municipio || '—')}`], ['Coordenada', r._coord === 'Com coordenada' ? `${r.Latitude.toFixed(6)}, ${r.Longitude.toFixed(6)}` : 'sem coordenada'], ['Custo total CTO', num(r.custo_total_cto)], ['Simulação compensação REN1000', num(r['Simulação Compensação REN1000'])]])}
     <div class="mgrid"><div><h4>Linha do tempo</h4>${timeline(r)}</div><div><h4>Localização</h4><div id="pmap"></div>${r._coord === 'Com coordenada' ? `<div style="margin-top:8px">${goLinks(r.Latitude, r.Longitude)}</div>` : ''}</div></div>
-    <h4>Histórico do projeto — fotos da FCU (${S.fotos.length})</h4>${histTable(HIST_P, f => f.byP.get(id))}
+    <h4>Histórico do projeto — fotos da FCU (${S.fotos.length})</h4>${histTable([[(x, f) => x ? (f.byN.get(String(x.nota)) || []).length : '', 'Projetos na nota'], ...HIST_P], f => f.byP.get(id))}
     <details><summary class="lnk" style="margin:10px 0;display:inline-block">Todas as informações do projeto (${S.cols.length} campos)${S.prev ? ` — destacados os que mudaram desde ${fdc(S.prev.ref)}` : ''}</summary>${info([]).replace('</div>', all + '</div>')}</details>
     <h4>Outros projetos da nota ${esc(r.nota)} (${irm.length})</h4>${irm.length ? projMini(irm) : '<p class="muted">Nenhum outro projeto nesta nota.</p>'}
     <div class="actions"><button class="btn" data-n="${esc(r.nota)}">Abrir histórico da nota</button><button class="btn" id="mCopy">Copiar link do projeto</button><button class="btn primary" id="mExp">⬇ Exportar histórico (Excel)</button></div>`);
@@ -625,7 +629,7 @@ function openFromHash() {
 /* ---------- exportação ---------- */
 const stamp = () => isoNow().slice(0, 16).replace(/[-: ]/g, '').replace(/^(\d{8})(\d{4})$/, '$1_$2');
 const xDate = (k, v) => DATE_COLS.has(k) && v ? new Date(v + 'T12:00:00') : v;
-function sheetRows(rs) { return rs.map(r => { const o = {}; for (const c of S.cols) o[c] = xDate(c, r[c]); o['Situação do prazo (painel)'] = r._prazo; o[`Mudança desde ${S.prev ? fdc(S.prev.ref) : '-'}`] = r._mud; if (r._coord === 'Com coordenada') o['Google Maps'] = gm(r.Latitude, r.Longitude); return o; }); }
+function sheetRows(rs) { return rs.map(r => { const o = {}; for (const c of S.cols) { o[c] = xDate(c, r[c]); if (c === 'nota') o['Projetos na nota'] = r._np; } o['Situação do prazo (painel)'] = r._prazo; o[`Mudança desde ${S.prev ? fdc(S.prev.ref) : '-'}`] = r._mud; if (r._coord === 'Com coordenada') o['Google Maps'] = gm(r.Latitude, r.Longitude); return o; }); }
 function filtrosSheet() { return XLSX.utils.aoa_to_sheet([['Exportado em', new Date().toLocaleString('pt-BR', {timeZone: 'America/Sao_Paulo'})], ['Base', S.base.meta.arquivo], ['Referência', fd(S.fotos[S.fotos.length - 1].ref)], [], ['Filtros aplicados'], ...F.filter(active).map(f => [chipText(f)])]); }
 function exportXlsx(kind) {
   if (typeof XLSX === 'undefined') return toast('Biblioteca de Excel não carregada.');
@@ -633,7 +637,7 @@ function exportXlsx(kind) {
   if (kind === 'notas') {
     const ns = notasAgg(S.vis).map(a => ({Nota: a.nota, 'KPI MBO': a['KPI MBO'], 'KPI Nota': a['KPI Nota'], Status_Nota: a.Status_Nota, 'Status execução': a.Status_Execução_Nota, 'Situação do prazo': a._prazo,
       Prazo_Final_DELI: xDate('Prazo_Final_DELI', a.Prazo_Final_DELI), 'Qtd Dias p/ Venc': a['Qtd Dias p/ Venc'], Aging: a.AUX_AGING_VENC_Tabela, dataDELI: xDate('dataDELI', a.dataDELI), Polo: a.Polo, 'Executante(s)': a.emps,
-      Cliente: a.CLIENTE, 'Tipo de Cliente': a['Tipo de Cliente'], Tipo_Obj_Nota: a.Tipo_Obj_Nota, Projetos: a.np, 'UPS planejado': a.ups, 'Programações': a.progs, data_nota: xDate('data_nota', a.data_nota), camada: a.camada, municipio: a.municipio, bairro: a.bairro, 'Mudança': a._mud}));
+      Cliente: a.CLIENTE, 'Tipo de Cliente': a['Tipo de Cliente'], Tipo_Obj_Nota: a.Tipo_Obj_Nota, 'Projetos na nota': a._np, 'Projetos no recorte': a.np, 'UPS planejado': a.ups, 'Programações': a.progs, data_nota: xDate('data_nota', a.data_nota), camada: a.camada, municipio: a.municipio, bairro: a.bairro, 'Mudança': a._mud}));
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(ns), 'Notas');
   } else {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sheetRows(kind === 'full' ? S.rows : S.vis)), 'Projetos');
@@ -644,7 +648,7 @@ function exportXlsx(kind) {
 function exportHist(ps, nota) {
   if (typeof XLSX === 'undefined') return;
   const wb = XLSX.utils.book_new(), out = [];
-  for (const p of ps) for (const f of S.fotos) { const x = f.byP.get(p.Projeto); const o = {Foto: fd(f.ref), Projeto: p.Projeto, Consta: x ? 'sim' : 'não'}; for (const [k, l] of HIST_P) o[l] = x ? xDate(k, x[k]) : null; out.push(o); }
+  for (const p of ps) for (const f of S.fotos) { const x = f.byP.get(p.Projeto); const o = {Foto: fd(f.ref), Projeto: p.Projeto, Consta: x ? 'sim' : 'não', 'Projetos na nota': x ? (f.byN.get(String(x.nota)) || []).length : null}; for (const [k, l] of HIST_P) o[l] = x ? xDate(k, x[k]) : null; out.push(o); }
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(out), 'Histórico (fotos)');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sheetRows(ps)), 'Dados atuais');
   XLSX.writeFile(wb, `Historico_${nota ? 'Nota_' + nota : ps[0].Projeto.replace(/[^\w.-]+/g, '_')}_${stamp()}.xlsx`);
